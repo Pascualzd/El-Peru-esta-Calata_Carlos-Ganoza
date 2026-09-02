@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CALATO — sistemas generativos de El Perú está calato</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Anthropic Brand Colors */
+        :root {
+            --anthropic-dark: #141413;
+            --anthropic-light: #faf9f5;
+            --anthropic-mid-gray: #b0aea5;
+            --anthropic-light-gray: #e8e6dc;
+            --anthropic-orange: #d97757;
+            --anthropic-blue: #6a9bcc;
+            --anthropic-green: #788c5d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--anthropic-light) 0%, #f5f3ee 100%);
+            min-height: 100vh;
+            color: var(--anthropic-dark);
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar h1 {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .sidebar .subtitle {
+            color: var(--anthropic-mid-gray);
+            font-size: 14px;
+            margin-bottom: 32px;
+            line-height: 1.4;
+        }
+
+        /* Control Sections */
+        .control-section {
+            margin-bottom: 32px;
+        }
+
+        .control-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-section h3::before {
+            content: '•';
+            color: var(--anthropic-orange);
+            font-weight: bold;
+        }
+
+        /* Seed Controls */
+        .seed-input {
+            width: 100%;
+            background: var(--anthropic-light);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--anthropic-light-gray);
+            text-align: center;
+        }
+
+        .seed-input:focus {
+            outline: none;
+            border-color: var(--anthropic-orange);
+            box-shadow: 0 0 0 2px rgba(217, 119, 87, 0.1);
+            background: white;
+        }
+
+        .seed-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .regen-button {
+            margin-bottom: 0;
+        }
+
+        /* Parameter Controls */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: var(--anthropic-light-gray);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: #c86641;
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .value-display {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Color Pickers */
+        .color-group {
+            margin-bottom: 16px;
+        }
+
+        .color-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            margin-bottom: 4px;
+        }
+
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-picker-container input[type="color"] {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+        }
+
+        .color-value {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Buttons */
+        .button {
+            background: var(--anthropic-orange);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .button:hover {
+            background: #c86641;
+            transform: translateY(-1px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.secondary {
+            background: var(--anthropic-blue);
+        }
+
+        .button.secondary:hover {
+            background: #5a8bb8;
+        }
+
+        .button.tertiary {
+            background: var(--anthropic-green);
+        }
+
+        .button.tertiary:hover {
+            background: #6b7b52;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button-row .button {
+            flex: 1;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        #canvas-container {
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(20, 20, 19, 0.1);
+            background: white;
+        }
+
+        #canvas-container canvas {
+            display: block;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Responsive - Stack on mobile */
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .canvas-area {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Control Sidebar -->
+        <div class="sidebar">
+            <h1>CALATO</h1>
+            <div class="subtitle">Siete sistemas generativos sobre una sola idea: qué queda de un sistema cuando se retira la fuerza externa que lo sostenía.</div>
+
+            <!-- Seed Section (ALWAYS KEEP THIS) -->
+            <div class="control-section">
+                <h3>Semilla</h3>
+                <input type="number" id="seed-input" class="seed-input" value="12345" onchange="updateSeed()">
+                <div class="seed-controls">
+                    <button class="button secondary" onclick="previousSeed()">← Anterior</button>
+                    <button class="button secondary" onclick="nextSeed()">Siguiente →</button>
+                </div>
+                <button class="button tertiary regen-button" onclick="randomSeedAndUpdate()">↻ Al azar</button>
+            </div>
+
+            <!-- Parameters Section -->
+            <div class="control-section">
+                <h3>Sistema</h3>
+                <div class="control-group">
+                    <label>Gramática</label>
+                    <select id="system" class="seed-input" style="text-align:left" onchange="updateSystem(this.value)">
+                        <option value="marea">Marea — el forzante que se retira</option>
+                        <option value="acumulacion">Acumulación — masa que sube, orden que no</option>
+                        <option value="carriles">Dos carriles — la brecha que se abre</option>
+                        <option value="pulverizacion">Pulverización — nada alcanza el equilibrio</option>
+                        <option value="monopolio">Monopolio roto — la fuerza que deja de ser una</option>
+                        <option value="metastasis">Metástasis — el poder que coloniza</option>
+                        <option value="tejido">Tejido — vestir al Perú</option>
+                    </select>
+                </div>
+                <div class="control-group" id="system-note"
+                     style="font-size:13px;line-height:1.5;color:var(--anthropic-mid-gray)"></div>
+            </div>
+
+            <div class="control-section">
+                <h3>Parámetros</h3>
+
+                <div class="control-group">
+                    <label>Densidad</label>
+                    <div class="slider-container">
+                        <input type="range" id="density" min="0.2" max="2.2" step="0.05" value="1" oninput="updateParam('density', this.value)">
+                        <span class="value-display" id="density-value">1</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Velocidad</label>
+                    <div class="slider-container">
+                        <input type="range" id="speed" min="0.15" max="2.5" step="0.05" value="1" oninput="updateParam('speed', this.value)">
+                        <span class="value-display" id="speed-value">1</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Escala del campo</label>
+                    <div class="slider-container">
+                        <input type="range" id="scale" min="0.3" max="2.6" step="0.05" value="1" oninput="updateParam('scale', this.value)">
+                        <span class="value-display" id="scale-value">1</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Rampa del forzante</label>
+                    <div class="slider-container">
+                        <input type="range" id="ramp" min="0.15" max="3" step="0.05" value="1" oninput="updateParam('ramp', this.value)">
+                        <span class="value-display" id="ramp-value">1</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Memoria de la estela</label>
+                    <div class="slider-container">
+                        <input type="range" id="fade" min="0" max="40" step="1" value="4" oninput="updateParam('fade', this.value)">
+                        <span class="value-display" id="fade-value">4</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colors Section -->
+            <div class="control-section">
+                <h3>Paleta</h3>
+
+                <div class="color-group">
+                    <label>Acento</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="color1" value="#b91c1c" onchange="updateColor('color1', this.value)">
+                        <span class="color-value" id="color1-value">#b91c1c</span>
+                    </div>
+                </div>
+
+                <div class="color-group">
+                    <label>Contraste</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="color2" value="#2f6fa8" onchange="updateColor('color2', this.value)">
+                        <span class="color-value" id="color2-value">#2f6fa8</span>
+                    </div>
+                </div>
+
+                <div class="color-group">
+                    <label>Ceniza</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="color3" value="#7c7768" onchange="updateColor('color3', this.value)">
+                        <span class="color-value" id="color3-value">#7c7768</span>
+                    </div>
+                </div>
+
+                <div class="color-group">
+                    <label>Papel</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="color4" value="#fbfaf8" onchange="updateColor('color4', this.value)">
+                        <span class="color-value" id="color4-value">#fbfaf8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Section (ALWAYS KEEP THIS) -->
+            <div class="control-section">
+                <h3>Acciones</h3>
+                <div class="button-row">
+                    <button class="button" onclick="initializeSystem()">Regenerar</button>
+                    <button class="button" onclick="resetParameters()">Reiniciar</button>
+                </div>
+                <button class="button tertiary regen-button" style="margin-top:8px" onclick="downloadPNG()">↓ Descargar PNG</button>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="canvas-area">
+            <div id="canvas-container">
+                <div class="loading">Iniciando el sistema…</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// ═══════════════════════════════════════════════════════════════════════
+// CALATO — siete sistemas generativos
+// Filosofía: CALATO-filosofia-algoritmica.md
+// Todo sembrado: la misma semilla da siempre la misma obra.
+// ═══════════════════════════════════════════════════════════════════════
+
+let params = {
+  seed: 12345,
+  system: 'marea',
+  density: 1,
+  speed: 1,
+  scale: 1,
+  ramp: 1,
+  fade: 4,
+  colorPalette: ['#b91c1c', '#2f6fa8', '#7c7768', '#fbfaf8']
+};
+
+let defaultParams = JSON.parse(JSON.stringify(params));
+
+const NOTES = {
+  marea: 'La marea baja con una rampa larga. Bajo la línea de agua las partículas siguen el campo y arden; sobre ella conservan la trayectoria y pierden el color.',
+  acumulacion: 'Cada elemento que cae aumenta la masa y desordena un poco más el ángulo del montón. Crece sin organizarse: crecimiento, no desarrollo.',
+  carriles: 'Dos bandas con velocidades que divergen. La brecha —no el nivel— es lo que se hace visible.',
+  pulverizacion: 'Las celdas se fisionan más rápido de lo que se relajan y mueren jóvenes. La teselación nunca alcanza equilibrio.',
+  monopolio: 'Un atractor único se fisiona en muchos. Los destellos marcan las fronteras que ningún atractor domina.',
+  metastasis: 'Agregación limitada por difusión desde un foco que coloniza los otros dos nodos por los canales que los unían.',
+  tejido: 'Urdimbre completa, trama en curso. La superficie se viste de abajo hacia arriba y nunca del todo.'
+};
+
+let S = null, t = 0, ACC, CON, ASH, PAPER;
+
+// Cada gramática necesita su propia memoria: las de estela guardan el rastro,
+// las que redibujan su estado entero necesitan que el papel casi se limpie.
+const FADE = {
+  marea: 4, carriles: 4, acumulacion: 20,
+  pulverizacion: 34, monopolio: 26, metastasis: 26, tejido: 46
+};
+
+function setup() {
+  const c = createCanvas(1000, 1000);
+  c.parent('canvas-container');
+  pixelDensity(Math.min(window.devicePixelRatio || 1, 2));
+  initializeSystem();
+  const l = document.querySelector('.loading');
+  if (l) l.style.display = 'none';
+}
+
+function readColors() {
+  ACC = color(params.colorPalette[0]);
+  CON = color(params.colorPalette[1]);
+  ASH = color(params.colorPalette[2]);
+  PAPER = color(params.colorPalette[3]);
+}
+
+function initializeSystem() {
+  randomSeed(params.seed);
+  noiseSeed(params.seed);
+  readColors();
+  t = 0;
+  S = SYSTEMS[params.system]();
+  background(PAPER);
+  const n = document.getElementById('system-note');
+  if (n) n.textContent = NOTES[params.system];
+}
+
+function draw() {
+  if (!S) return;
+  noStroke();
+  fill(red(PAPER), green(PAPER), blue(PAPER), params.fade);
+  rect(0, 0, width, height);
+  t += 16.7;
+  S.step();
+  S.draw();
+  if (S.overlay) S.overlay();
+}
+
+function st(c, a, w) { stroke(red(c), green(c), blue(c), a); strokeWeight(w); noFill(); }
+function fl(c, a) { noStroke(); fill(red(c), green(c), blue(c), a); }
+
+// ═══════════════════════════════════════════════════════════════════════
+// LAS SIETE GRAMÁTICAS
+// ═══════════════════════════════════════════════════════════════════════
+const SYSTEMS = {};
+
+/* 1 · MAREA ─────────────────────────────────────────────────────────── */
+SYSTEMS.marea = function () {
+  const N = Math.round(params.density * 2200);
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    pts.push({ x: random(width), y: random(height), px: 0, py: 0, v: 0.4 + random(0.9), dry: 0 });
+  }
+  let tide = 1, line = 0;
+  return {
+    step() {
+      tide = 0.5 + 0.5 * Math.cos(t * 0.00016 * params.ramp);
+      line = height * (1 - tide) * 0.74;
+      for (const p of pts) {
+        p.px = p.x; p.py = p.y;
+        if (p.y > line) {
+          const a = noise(p.x * 0.0018 * params.scale, p.y * 0.0018 * params.scale, t * 0.00004) * TWO_PI * 1.7;
+          p.x += Math.cos(a) * p.v * params.speed * 1.6;
+          p.y += Math.sin(a) * p.v * params.speed * 0.95;
+          p.dry += (0 - p.dry) * 0.05;
+        } else {
+          p.dry += (1 - p.dry) * 0.012;
+          p.y += 0.06;
+        }
+        if (p.x < -8) p.x = width + 8; if (p.x > width + 8) p.x = -8;
+        if (p.y < -8) p.y = height + 8; if (p.y > height + 8) p.y = -8;
+      }
+    },
+    draw() {
+      strokeCap(ROUND);
+      for (const p of pts) {
+        if (Math.abs(p.x - p.px) > width * 0.5 || Math.abs(p.y - p.py) > height * 0.5) continue;
+        if (p.dry > 0.5) st(ASH, 34 * p.dry, 0.9);
+        else st(ACC, 22 + 56 * (1 - p.dry) * p.v, 0.9 + p.v * 1.6);
+        line2(p.px, p.py, p.x, p.y);
+      }
+    },
+    overlay() {
+      st(CON, 26, 1.4);
+      beginShape();
+      for (let x = 0; x <= width; x += 8) {
+        vertex(x, line + (noise(x * 0.003, tide * 2) - 0.5) * 26);
+      }
+      endShape();
+    }
+  };
+};
+
+/* 2 · ACUMULACIÓN ───────────────────────────────────────────────────── */
+SYSTEMS.acumulacion = function () {
+  const cols = Math.max(30, Math.round(width / 16));
+  const top = new Float32Array(cols).fill(height);
+  const bars = [], falling = [];
+  const spawn = () => falling.push({
+    c: Math.floor(random(cols)), y: -20, a: random(PI), len: 10 + random(20)
+  });
+  for (let i = 0; i < 90; i++) spawn();
+  return {
+    step() {
+      while (falling.length < 170 * params.density) spawn();
+      for (let i = falling.length - 1; i >= 0; i--) {
+        const f = falling[i];
+        f.y += (2.4 + f.len * 0.08) * params.speed;
+        if (f.y >= top[f.c] - 8) {
+          top[f.c] -= 3.4;
+          f.a += random(-0.5, 0.5);
+          bars.push({ x: (f.c + 0.5) * (width / cols), y: top[f.c], a: f.a, len: f.len });
+          if (bars.length > 5200) bars.shift();
+          falling.splice(i, 1);
+        }
+      }
+    },
+    draw() {
+      strokeCap(ROUND);
+      for (let i = 0; i < bars.length; i++) {
+        const b = bars[i];
+        const k = i / bars.length;
+        if (i % 9 === 0) st(ACC, 26 + 40 * k, 1.7); else st(ASH, 20 + 34 * k, 1.7);
+        line2(b.x - Math.cos(b.a) * b.len, b.y - Math.sin(b.a) * b.len,
+              b.x + Math.cos(b.a) * b.len, b.y + Math.sin(b.a) * b.len);
+      }
+    },
+    overlay() {
+      st(ACC, 60, 1.4);
+      beginShape();
+      for (let k = 0; k < cols; k++) vertex((k + 0.5) * (width / cols), top[k]);
+      endShape();
+    }
+  };
+};
+
+/* 3 · DOS CARRILES ──────────────────────────────────────────────────── */
+SYSTEMS.carriles = function () {
+  const N = Math.round(params.density * 1500), pts = [];
+  for (let i = 0; i < N; i++) pts.push({ x: random(width), y: random(height), b: random(1), v: 0, fast: false });
+  let split = height * 0.5;
+  return {
+    step() {
+      split = height * 0.5 + Math.sin(t * 0.0002) * height * 0.045;
+      const gap = 0.1 + 0.34 * (0.5 + 0.5 * Math.sin(t * 0.00013 * params.ramp));
+      for (const p of pts) {
+        p.fast = p.y < split;
+        p.v = (p.fast ? 1.6 + gap * 5 : 1.6 - gap * 1.35);
+        p.v *= 0.55 + noise(p.y * 0.006 * params.scale, t * 0.00004) * 1.1;
+        p.x += p.v * params.speed * 1.6;
+        p.y += Math.sin(p.x * 0.006 + p.b * 6) * 0.22;
+        if (p.x > width + 20) p.x = -20;
+        if (p.y < 3) p.y = height - 3; if (p.y > height - 3) p.y = 3;
+      }
+    },
+    draw() {
+      strokeCap(ROUND);
+      for (const p of pts) {
+        const tail = Math.min(120, p.v * (p.fast ? 26 : 8));
+        if (p.fast) st(CON, 30, 1.1); else st(ACC, 46, 1.7);
+        line2(p.x - tail, p.y, p.x, p.y);
+      }
+    },
+    overlay() {
+      st(ASH, 60, 1.2);
+      drawingContext.setLineDash([10, 12]);
+      line2(0, split, width, split);
+      drawingContext.setLineDash([]);
+    }
+  };
+};
+
+/* 4 · PULVERIZACIÓN ─────────────────────────────────────────────────── */
+SYSTEMS.pulverizacion = function () {
+  const MAX = Math.round(46 * params.density);
+  let cells = [{ x: width / 2, y: height / 2, vx: 0, vy: 0, age: 0, life: 6200, big: 1 }];
+  return {
+    step() {
+      for (let i = cells.length - 1; i >= 0; i--) {
+        const a = cells[i];
+        a.age += 2.2 * params.speed;
+        if (a.age > a.life) { cells.splice(i, 1); continue; }
+        for (let j = 0; j < cells.length; j++) {
+          if (i === j) continue;
+          const b = cells[j], dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy;
+          if (d2 < 46000 && d2 > 0.01) {
+            const f = (1 - d2 / 46000) * 0.11, d = Math.sqrt(d2);
+            a.vx += dx / d * f; a.vy += dy / d * f;
+          }
+        }
+        // contención: el marco no rebota, atrae; así nadie escapa del lienzo
+        a.vx += (width / 2 - a.x) * 0.00055;
+        a.vy += (height / 2 - a.y) * 0.00055;
+        a.vx *= 0.93; a.vy *= 0.93;
+        a.x = constrain(a.x + a.vx * params.speed, 30, width - 30);
+        a.y = constrain(a.y + a.vy * params.speed, 30, height - 30);
+        if (cells.length < MAX && random() < 0.009 * params.ramp) {
+          cells.push({
+            x: a.x + random(-60, 60), y: a.y + random(-60, 60),
+            vx: random(-0.8, 0.8), vy: random(-0.8, 0.8),
+            age: 0, life: 1400 + random(5200), big: a.big * (0.5 + random(0.42))
+          });
+          a.big *= 0.84;
+        }
+      }
+      if (!cells.length) cells = [{ x: width / 2, y: height / 2, vx: 0, vy: 0, age: 0, life: 6000, big: 1 }];
+    },
+    draw() {
+      for (let i = 0; i < cells.length; i++) {
+        const a = cells[i];
+        let near = 1e12;
+        for (let j = 0; j < cells.length; j++) {
+          if (i === j) continue;
+          const d = (a.x - cells[j].x) ** 2 + (a.y - cells[j].y) ** 2;
+          if (d < near) near = d;
+        }
+        const rad = Math.min(Math.sqrt(near) * 0.52, 16 + Math.pow(a.big, 1.4) * 250);
+        const fade = 1 - a.age / a.life;
+        st(a.big > 0.6 ? ACC : ASH, 46 + 100 * fade * Math.max(0.22, a.big), 1 + a.big * 2.6);
+        circle(a.x, a.y, Math.max(6, rad) * 2);
+        fl(a.big > 0.6 ? ACC : ASH, 160 * fade);
+        circle(a.x, a.y, 3 + a.big * 8);
+      }
+    }
+  };
+};
+
+/* 5 · MONOPOLIO ROTO ────────────────────────────────────────────────── */
+SYSTEMS.monopolio = function () {
+  const cores = [{ x: width / 2, y: height / 2, m: 1 }];
+  const N = Math.round(params.density * 1400), pts = [], flares = [];
+  for (let i = 0; i < N; i++) pts.push({ x: random(width), y: random(height), vx: 0, vy: 0 });
+  let nextSplit = 900;
+  return {
+    step() {
+      if (t > nextSplit && cores.length < 8) {
+        const c0 = cores[Math.floor(random(cores.length))];
+        cores.push({ x: c0.x + random(-1, 1) * width * 0.3, y: c0.y + random(-1, 1) * height * 0.3, m: c0.m * 0.72 });
+        c0.m *= 0.8;
+        nextSplit = t + 2600 / params.ramp;
+      }
+      for (const p of pts) {
+        let bx = 0, by = 0, best = 1e9, second = 1e9;
+        for (const c of cores) {
+          const dx = c.x - p.x, dy = c.y - p.y, d = Math.sqrt(dx * dx + dy * dy) + 1;
+          const f = c.m * 190 / (d * d);
+          bx += dx / d * f - dy / d * f * 0.8;
+          by += dy / d * f + dx / d * f * 0.8;
+          if (d < best) { second = best; best = d; } else if (d < second) second = d;
+        }
+        p.vx = (p.vx + bx) * 0.965; p.vy = (p.vy + by) * 0.965;
+        p.x += p.vx * params.speed; p.y += p.vy * params.speed;
+        if (p.x < 0 || p.x > width || p.y < 0 || p.y > height) {
+          p.x = random(width); p.y = random(height); p.vx = p.vy = 0;
+        }
+        if (cores.length > 1 && Math.abs(best - second) < 14 && random() < 0.04) {
+          flares.push({ x: p.x, y: p.y, a: 1 });
+        }
+      }
+      for (let i = flares.length - 1; i >= 0; i--) {
+        flares[i].a -= 0.02;
+        if (flares[i].a <= 0) flares.splice(i, 1);
+      }
+    },
+    draw() {
+      fl(ASH, 42);
+      for (const p of pts) circle(p.x, p.y, 2.2);
+      for (const c of cores) { st(ACC, 26 + c.m * 46, 1.2); circle(c.x, c.y, (48 + c.m * 110) * 2); }
+      for (const f of flares) { fl(ACC, f.a * 170); circle(f.x, f.y, 3 + (1 - f.a) * 22); }
+    }
+  };
+};
+
+/* 6 · METÁSTASIS ────────────────────────────────────────────────────── */
+SYSTEMS.metastasis = function () {
+  const nodes = [
+    { x: width * 0.5, y: height * 0.26 },
+    { x: width * 0.22, y: height * 0.76 },
+    { x: width * 0.78, y: height * 0.76 }
+  ];
+  const stuck = nodes.map(n => ({ x: n.x, y: n.y }));
+  const CELL = 12, grid = {};
+  const key = (x, y) => `${(x / CELL) | 0}:${(y / CELL) | 0}`;
+  stuck.forEach(p => (grid[key(p.x, p.y)] || (grid[key(p.x, p.y)] = [])).push(p));
+  const newWalker = () => {
+    const q = random();
+    const n = q < 0.5 ? nodes[0] : (q < 0.75 ? nodes[1] : nodes[2]);
+    return { x: n.x + random(-160, 160), y: n.y + random(-160, 160), home: n };
+  };
+  const walkers = [];
+  for (let i = 0; i < Math.round(120 * params.density); i++) walkers.push(newWalker());
+  return {
+    step() {
+      const steps = Math.max(1, Math.round(8 * params.speed));
+      for (let s = 0; s < steps; s++) {
+        for (let i = 0; i < walkers.length; i++) {
+          const w = walkers[i];
+          w.x += random(-2.4, 2.4); w.y += random(-2.4, 2.4);
+          w.x += (w.home.x - w.x) * 0.012; w.y += (w.home.y - w.y) * 0.012;
+          let hit = false;
+          const gx = (w.x / CELL) | 0, gy = (w.y / CELL) | 0;
+          for (let ax = -1; ax <= 1 && !hit; ax++) {
+            for (let ay = -1; ay <= 1 && !hit; ay++) {
+              const b = grid[`${gx + ax}:${gy + ay}`];
+              if (!b) continue;
+              for (const q of b) {
+                if ((q.x - w.x) ** 2 + (q.y - w.y) ** 2 < 22) { hit = true; break; }
+              }
+            }
+          }
+          if (hit && stuck.length < 9000) {
+            const p = { x: w.x, y: w.y };
+            stuck.push(p);
+            const k = key(p.x, p.y);
+            (grid[k] || (grid[k] = [])).push(p);
+            walkers[i] = newWalker();
+          } else if (w.x < -40 || w.x > width + 40 || w.y < -40 || w.y > height + 40) {
+            walkers[i] = newWalker();
+          }
+        }
+      }
+    },
+    draw() {
+      for (const n of nodes) { st(ASH, 40, 1.2); circle(n.x, n.y, 108); }
+      st(ACC, 44, 1.2);
+      drawingContext.setLineDash([8, 12]);
+      for (let i = 1; i < nodes.length; i++) line2(nodes[0].x, nodes[0].y, nodes[i].x, nodes[i].y);
+      drawingContext.setLineDash([]);
+      for (let i = 0; i < stuck.length; i++) {
+        const k = 1 - i / stuck.length;
+        fl(k > 0.5 ? ACC : ASH, 38 + 90 * k);
+        rect(stuck[i].x - 1.2, stuck[i].y - 1.2, 2.4, 2.4);
+      }
+    }
+  };
+};
+
+/* 7 · TEJIDO ────────────────────────────────────────────────────────── */
+SYSTEMS.tejido = function () {
+  const warp = Math.round(52 * params.density), weft = Math.round(40 * params.density);
+  let woven = 0;
+  return {
+    step() { woven = 0.5 + 0.5 * Math.sin(t * 0.00018 * params.ramp - HALF_PI); },
+    draw() {
+      strokeCap(ROUND);
+      for (let i = 0; i < warp; i++) {
+        const x = (i + 0.5) * (width / warp);
+        st(ASH, 24 + 18 * noise(i * 0.3), 1.2);
+        line2(x, 0, x, height);
+      }
+      const upto = Math.round(weft * woven);
+      for (let j = 0; j < upto; j++) {
+        const y = (j + 0.5) * (height / weft);
+        st(j % 4 === 0 ? ACC : ASH, 54 + 66 * (1 - j / weft), 2 + (j % 4 === 0 ? 1.6 : 0));
+        beginShape();
+        for (let x = 0; x <= width; x += 7) {
+          vertex(x, y + Math.sin(x * 0.03 + j) * 3.2 + (noise(x * 0.003 * params.scale, j * 0.2) - 0.5) * 12);
+        }
+        endShape();
+      }
+    }
+  };
+};
+
+function line2(a, b, c, d) { line(a, b, c, d); }
+
+// ═══════════════════════════════════════════════════════════════════════
+// CONTROLES
+// ═══════════════════════════════════════════════════════════════════════
+function updateParam(name, value) {
+  params[name] = parseFloat(value);
+  document.getElementById(name + '-value').textContent = value;
+  if (name === 'density') initializeSystem();
+}
+
+function updateSystem(v) {
+  params.system = v;
+  params.fade = FADE[v];
+  const f = document.getElementById('fade');
+  if (f) { f.value = params.fade; document.getElementById('fade-value').textContent = params.fade; }
+  initializeSystem();
+}
+
+function updateColor(id, value) {
+  const idx = { color1: 0, color2: 1, color3: 2, color4: 3 }[id];
+  params.colorPalette[idx] = value;
+  document.getElementById(id + '-value').textContent = value;
+  readColors();
+  if (idx === 3) background(PAPER);
+}
+
+function downloadPNG() {
+  saveCanvas('calato-' + params.system + '-' + params.seed, 'png');
+}
+
+// ─── Semilla (SIEMPRE SE CONSERVA) ──────────────────────────────────────
+function updateSeedDisplay() { document.getElementById('seed-input').value = params.seed; }
+
+function updateSeed() {
+  const n = parseInt(document.getElementById('seed-input').value, 10);
+  if (n && n > 0) { params.seed = n; initializeSystem(); } else updateSeedDisplay();
+}
+function previousSeed() { params.seed = Math.max(1, params.seed - 1); updateSeedDisplay(); initializeSystem(); }
+function nextSeed() { params.seed += 1; updateSeedDisplay(); initializeSystem(); }
+function randomSeedAndUpdate() {
+  params.seed = Math.floor(Math.random() * 999999) + 1;
+  updateSeedDisplay(); initializeSystem();
+}
+
+function resetParameters() {
+  params = JSON.parse(JSON.stringify(defaultParams));
+  ['density', 'speed', 'scale', 'ramp', 'fade'].forEach(k => {
+    document.getElementById(k).value = params[k];
+    document.getElementById(k + '-value').textContent = params[k];
+  });
+  ['color1', 'color2', 'color3', 'color4'].forEach((id, i) => {
+    document.getElementById(id).value = params.colorPalette[i];
+    document.getElementById(id + '-value').textContent = params.colorPalette[i];
+  });
+  document.getElementById('system').value = params.system;
+  updateSeedDisplay();
+  initializeSystem();
+}
+
+window.addEventListener('load', function () {
+  updateSeedDisplay();
+  const n = document.getElementById('system-note');
+  if (n) n.textContent = NOTES[params.system];
+});
+
+    </script>
+</body>
+</html>
